@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 
 public final class Matcher<T> {
     private final T value;
-    private Predicate<T> tPredicate;
 
     private Matcher(T value) {
         this.value = value;
@@ -15,8 +14,9 @@ public final class Matcher<T> {
 
     /**
      * Use a static import for this method.
+     *
      * @param value kk
-     * @param <T> kk
+     * @param <T>   kk
      * @return Returns a Matcher instance encapsulating the given value.
      */
     public static <T> Matcher<T> Match(T value) {
@@ -24,29 +24,9 @@ public final class Matcher<T> {
         return new Matcher<>(value);
     }
 
-    public Matcher<T> of(Predicate<T> tPredicate) {
+    public Case<T> of(Predicate<T> tPredicate) {
         Objects.requireNonNull(tPredicate);
-        this.tPredicate = tPredicate;
-        return this;
-    }
-
-    public <U> U match(Supplier<U> supplier) {
-        if (tPredicate.test(value))
-            return supplier.get();
-        else throw new PredicateEvaluationException("Predicate evaluation is false");
-    }
-
-    public <U> Optional<U> ifMatch(Supplier<U> supplier) {
-        if (tPredicate.test(value))
-            return Optional.of(supplier.get());
-        else return Optional.empty();
-    }
-
-    public Moment ifMatch(Runnable runnable) {
-        if (tPredicate.test(value)) {
-            runnable.run();
-            return Moment.ofUnTruth();
-        } else return Moment.ofTruth();
+        return new Case<>(tPredicate, value);
     }
 
     public static final class Moment {
@@ -70,4 +50,32 @@ public final class Matcher<T> {
         }
     }
 
+    public static final class Case<T> {
+        private final Predicate<T> tPredicate;
+        private final T value;
+
+        public Case(Predicate<T> tPredicate, T value) {
+            this.tPredicate = tPredicate;
+            this.value = value;
+        }
+
+        public <U> U match(Supplier<U> supplier) {
+            if (tPredicate.test(value))
+                return supplier.get();
+            else throw new PredicateEvaluationException("Predicate evaluation is false");
+        }
+
+        public <U> Optional<U> ifMatch(Supplier<U> supplier) {
+            if (tPredicate.test(value))
+                return Optional.of(supplier.get());
+            else return Optional.empty();
+        }
+
+        public Moment ifMatch(Runnable runnable) {
+            if (tPredicate.test(value)) {
+                runnable.run();
+                return Moment.ofUnTruth();
+            } else return Moment.ofTruth();
+        }
+    }
 }
